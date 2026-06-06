@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat App - Examen Final</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #16213e;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #0f3460;
+    }
+
+    header h1 { font-size: 1.3rem; color: #e94560; }
+
+    #user-badge {
+      font-size: 0.85rem;
+      background: #0f3460;
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: none;
+    }
+
+    #btn-logout {
+      background: #e94560;
+      border: none;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .container { max-width: 860px; margin: 40px auto; padding: 0 16px; }
+
+    /* ─── CARD ──────────────────────────────────── */
+    .card {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 24px;
+      border: 1px solid #0f3460;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #e94560;
+      margin-bottom: 18px;
+    }
+
+    /* ─── FORM ──────────────────────────────────── */
+    .form-group { margin-bottom: 16px; }
+
+    label { display: block; font-size: 0.82rem; color: #a0a0b0; margin-bottom: 6px; }
+
+    input[type="text"],
+    input[type="password"],
+    textarea {
+      width: 100%;
+      background: #0f3460;
+      border: 1px solid #1a4a80;
+      color: #e0e0e0;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus { border-color: #e94560; }
+
+    textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+
+    .btn {
+      display: inline-block;
+      background: #e94560;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn:hover { background: #c73652; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { background: #555; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: #0f3460;
+      margin-left: 10px;
+    }
+    .btn-secondary:hover { background: #1a4a80; }
+
+    /* ─── ALERT ─────────────────────────────────── */
+    .alert {
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    .alert-success { background: #1a4a2a; border: 1px solid #2e7d44; color: #7de8a0; }
+    .alert-error   { background: #4a1a1a; border: 1px solid #7d2e2e; color: #e87d7d; }
+
+    /* ─── CHAT ──────────────────────────────────── */
+    #chat-box {
+      height: 400px;
+      overflow-y: auto;
+      background: #0d1b2a;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border: 1px solid #0f3460;
+    }
+
+    .msg {
+      max-width: 72%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .msg-other {
+      background: #16213e;
+      border: 1px solid #1a4a80;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-own {
+      background: #0f3460;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg-meta {
+      font-size: 0.72rem;
+      color: #8888a0;
+      margin-bottom: 4px;
+    }
+
+    .msg-own .msg-meta { text-align: right; }
+
+    .chat-controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    #loading-msgs {
+      text-align: center;
+      color: #8888a0;
+      font-size: 0.85rem;
+      padding: 20px;
+    }
+
+    /* ─── VISIBILITY ────────────────────────────── */
+    .hidden { display: none !important; }
+
+    #section-chat { display: none; }
+    #section-send { display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Chat App &mdash; Examen Final</h1>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <span id="user-badge"></span>
+    <button id="btn-logout" onclick="logout()">Cerrar Sesión</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ── SERIE I: LOGIN ─────────────────────────── -->
+  <div class="card" id="section-login">
+    <h2> Autenticación</h2>
+    <div class="form-group">
+      <label for="username">Usuario (parte antes del @miumg.edu.gt)</label>
+      <input type="text" id="username" placeholder="Ej: ctezop" autocomplete="username" />
+    </div>
+    <div class="form-group">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" placeholder="123456a" autocomplete="current-password" />
+    </div>
+    <button class="btn" id="btn-login" onclick="login()">Iniciar Sesión</button>
+    <div class="alert" id="login-alert"></div>
+  </div>
+
+  <!-- ── SERIE II: ENVÍO ───────────────────────── -->
+  <div class="card" id="section-send">
+    <h2> Enviar Mensaje</h2>
+    <div class="form-group">
+      <label for="msg-content">Mensaje</label>
+      <textarea id="msg-content" placeholder="Escribe tu mensaje aquí..."></textarea>
+    </div>
+    <div class="form-group">
+      <label for="cod-sala">Código de Sala</label>
+      <input type="text" id="cod-sala" value="0" disabled />
+    </div>
+    <button class="btn" id="btn-send" onclick="sendMessage()">Enviar Mensaje</button>
+    <div class="alert" id="send-alert"></div>
+  </div>
+
+  <!-- ── SERIE III: VISUALIZACIÓN ─────────────── -->
+  <div class="card" id="section-chat">
+    <h2> Mensajes del Chat</h2>
+    <div id="chat-box">
+      <div id="loading-msgs">Cargando mensajes...</div>
+    </div>
+    <div class="chat-controls">
+      <button class="btn btn-secondary" onclick="loadMessages()">&#8635; Actualizar</button>
+      <span id="msg-count" style="font-size:0.82rem;color:#8888a0;"></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const API_AUTH = 'https://backcvbgtmdesa.azurewebsites.net/api/login/authenticate';
+  const API_MSGS = 'https://backcvbgtmdesa.azurewebsites.net/api/Mensajes';
+  const API_LOCAL = 'http://localhost:3000/api/mensajes';
+
+  // ── Helpers ──────────────────────────────────────────
+  function showAlert(id, type, msg) {
+    const el = document.getElementById(id);
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideAlert(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    btn.disabled = loading;
+    btn.textContent = loading
+      ? (btnId === 'btn-login' ? 'Autenticando...' : 'Enviando...')
+      : (btnId === 'btn-login' ? 'Iniciar Sesión' : 'Enviar Mensaje');
+  }
+
+  function getToken()    { return sessionStorage.getItem('token'); }
+  function getUsername() { return sessionStorage.getItem('username'); }
+
+  function formatDate(str) {
+    if (!str) return '';
+    const d = new Date(str);
+    return isNaN(d) ? str : d.toLocaleString('es-GT');
+  }
+
+
+  async function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) {
+      showAlert('login-alert', 'error', 'Ingresa usuario y contraseña.');
+      return;
+    }
+
+    hideAlert('login-alert');
+    setLoading('btn-login', true);
+
+    try {
+      const res = await fetch(API_AUTH, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Username: username, Password: password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showAlert('login-alert', 'error', data.message || `Error ${res.status}: Credenciales inválidas.`);
+        return;
+      }
+
+      // El token puede venir en distintos campos según la API
+      const token = data.token || data.Token || data.accessToken || data.access_token || data.jwt;
+
+      if (!token) {
+        showAlert('login-alert', 'error', 'Login exitoso pero no se recibió token. Respuesta: ' + JSON.stringify(data));
+        return;
+      }
+
+      sessionStorage.setItem('token', token);
+      sessionStorage.setItem('username', username);
+
+      showSections();
+      loadMessages();
+
+    } catch (err) {
+      showAlert('login-alert', 'error', 'Error de red: ' + err.message);
+    } finally {
+      setLoading('btn-login', false);
+    }
+  }
+
+  // ── SERIE II: Enviar mensaje ─────────────────────────
+  async function sendMessage() {
+    const content = document.getElementById('msg-content').value.trim();
+    const codSala = parseInt(document.getElementById('cod-sala').value) || 0;
+    const token   = getToken();
+    const user    = getUsername();
+
+    if (!content) {
+      showAlert('send-alert', 'error', 'Escribe un mensaje antes de enviar.');
+      return;
+    }
+
+    hideAlert('send-alert');
+    setLoading('btn-send', true);
+
+    try {
+      const res = await fetch(API_MSGS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          Cod_Sala: codSala,
+          Login_Emisor: user,
+          Contenido: content,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        showAlert('send-alert', 'error', `Error ${res.status}: ${errText}`);
+        return;
+      }
+
+      document.getElementById('msg-content').value = '';
+      showAlert('send-alert', 'success', 'Mensaje enviado correctamente.');
+      await loadMessages();
+
+    } catch (err) {
+      showAlert('send-alert', 'error', 'Error de red: ' + err.message);
+    } finally {
+      setLoading('btn-send', false);
+    }
+  }
+
+  // ── SERIE III: Cargar mensajes ───────────────────────
+  async function loadMessages() {
+    const chatBox = document.getElementById('chat-box');
+    const countEl = document.getElementById('msg-count');
+    chatBox.innerHTML = '<div id="loading-msgs">Cargando mensajes...</div>';
+
+    try {
+      const res = await fetch(API_LOCAL);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const messages = await res.json();
+      chatBox.innerHTML = '';
+
+      if (messages.length === 0) {
+        chatBox.innerHTML = '<div id="loading-msgs">No hay mensajes aún.</div>';
+        countEl.textContent = '';
+        return;
+      }
+
+      const currentUser = getUsername();
+
+      messages.forEach(m => {
+        const isOwn = m.Login_Emisor === currentUser || m.login_emisor === currentUser;
+        const sender  = m.Login_Emisor || m.login_emisor || 'Desconocido';
+        const content = m.Contenido    || m.contenido    || '';
+        const fecha   = m.Fecha_Envio  || m.fecha_envio  || m.FechaEnvio || '';
+
+        const div = document.createElement('div');
+        div.className = `msg ${isOwn ? 'msg-own' : 'msg-other'}`;
+        div.innerHTML = `
+          <div class="msg-meta">${isOwn ? '' : `<strong>${sender}</strong> &mdash; `}${formatDate(fecha)}</div>
+          <div>${escapeHtml(content)}</div>
+        `;
+        chatBox.appendChild(div);
+      });
+
+      // Scroll al final
+      chatBox.scrollTop = chatBox.scrollHeight;
+      countEl.textContent = `${messages.length} mensaje${messages.length !== 1 ? 's' : ''}`;
+
+    } catch (err) {
+      chatBox.innerHTML = `<div id="loading-msgs" style="color:#e87d7d;">Error al cargar mensajes: ${err.message}</div>`;
+    }
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Navegación ───────────────────────────────────────
+  function showSections() {
+    document.getElementById('section-login').classList.add('hidden');
+    document.getElementById('section-send').style.display  = 'block';
+    document.getElementById('section-chat').style.display  = 'block';
+
+    const badge  = document.getElementById('user-badge');
+    const logout = document.getElementById('btn-logout');
+    badge.textContent = `Usuario: ${getUsername()}`;
+    badge.style.display  = 'inline-block';
+    logout.style.display = 'inline-block';
+  }
+
+  function logout() {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('username');
+
+    document.getElementById('section-login').classList.remove('hidden');
+    document.getElementById('section-send').style.display = 'none';
+    document.getElementById('section-chat').style.display = 'none';
+    document.getElementById('user-badge').style.display   = 'none';
+    document.getElementById('btn-logout').style.display   = 'none';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    hideAlert('login-alert');
+    hideAlert('send-alert');
+  }
+
+  // ── Init: restaurar sesión si existe token ────────────
+  (function init() {
+    if (getToken()) {
+      showSections();
+      loadMessages();
+    }
+  })();
+</script>
+</body>
+</html>
